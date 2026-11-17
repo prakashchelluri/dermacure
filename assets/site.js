@@ -76,6 +76,35 @@
     });
   });
 
+  /* home services: the row under the pointer or keyboard focus shows its picture */
+  const pick = $('.spick');
+  if (pick) {
+    const rows = $$('li', pick), on = li => rows.forEach(r => r.classList.toggle('on', r === li));
+    rows.forEach(li => {
+      li.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') on(li); });
+      li.addEventListener('focusin', () => on(li));
+    });
+  }
+
+  /* services page: show the services for one concern */
+  const filt = $('.sfilter');
+  if (filt) {
+    const list = filt.closest('.slist'), cards = $$('.scard', list), groups = $$('.tgroup', list), btns = $$('button', filt), count = $('#scount');
+    const apply = f => {
+      let n = 0;
+      cards.forEach(c => {
+        const show = f === 'all' || c.dataset.c === f;
+        c.hidden = !show; n += show;
+        if (show && !reduced.matches) c.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.22,.61,.36,1)' });
+      });
+      groups.forEach(g => { g.hidden = !cards.some(c => !c.hidden && g.contains(c)); });
+      list.classList.toggle('filtered', f !== 'all');
+      btns.forEach(b => b.setAttribute('aria-pressed', b.dataset.f === f));
+      count.textContent = f === 'all' ? 'All ' + cards.length + ' services' : n + ' of ' + cards.length + ' services';
+    };
+    filt.addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.getAttribute('aria-pressed') !== 'true') apply(b.dataset.f); });
+  }
+
   /* booking: opens WhatsApp with the details filled in */
   const form = $('#bookForm');
   if (form) {
