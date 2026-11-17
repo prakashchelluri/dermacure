@@ -71,7 +71,7 @@
   $$('.rnav').forEach(nav => {
     const track = $(nav.dataset.for);
     nav.addEventListener('click', e => {
-      const b = e.target.closest('button'); if (!b || !track) return;
+      const b = e.target.closest('button[data-dir]'); if (!b || !track) return;
       track.scrollBy({ left: (b.dataset.dir === 'next' ? 1 : -1) * Math.min(440, track.clientWidth * 0.9), behavior: reduced.matches ? 'auto' : 'smooth' });
     });
   });
@@ -94,7 +94,7 @@
       let n = 0;
       cards.forEach(c => {
         const show = f === 'all' || c.dataset.c === f;
-        c.hidden = !show; n += show;
+        c.hidden = !show; n += show; if (show) c.classList.add('in');
         if (show && !reduced.matches) c.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.22,.61,.36,1)' });
       });
       groups.forEach(g => { g.hidden = !cards.some(c => !c.hidden && g.contains(c)); });
@@ -103,6 +103,56 @@
       count.textContent = f === 'all' ? 'All ' + cards.length + ' services' : n + ' of ' + cards.length + ' services';
     };
     filt.addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.getAttribute('aria-pressed') !== 'true') apply(b.dataset.f); });
+  }
+
+  /* cards on the services and reviews pages come in one by one, in reading order */
+  const cards = $$('.rv');
+  if (cards.length) {
+    const showAll = () => cards.forEach(c => c.classList.add('in'));
+    if (reduced.matches || !('IntersectionObserver' in window)) showAll();
+    else {
+      const cardIO = new IntersectionObserver(entries => {
+        const hits = entries.filter(e => e.isIntersecting).map(e => e.target)
+          .sort((a, b) => { const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(); return (Math.round(ra.top / 60) - Math.round(rb.top / 60)) || (ra.left - rb.left); });
+        hits.forEach((c, i) => {
+          c.style.setProperty('--d', Math.min(i * 90, 450) + 'ms');
+          c.classList.add('in'); cardIO.unobserve(c);
+          setTimeout(() => c.style.removeProperty('--d'), 2400);   // later hovers answer at once
+        });
+      }, { rootMargin: '0px 0px -8% 0px' });
+      cards.forEach(c => cardIO.observe(c));
+      reduced.addEventListener('change', e => { if (e.matches) showAll(); });
+    }
+  }
+
+  /* home reviews: on a desktop the cards move along one at a time, slowly.
+     Hover or focus pauses it, the pause button or any arrow, scroll or touch stops it for good. */
+  const rtrack = $('#rtrack'), rplay = $('.rplay');
+  if (rtrack && rplay && !reduced.matches && matchMedia('(hover:hover) and (min-width:861px)').matches) {
+    let timer = null, held = false, stopped = false;
+    const STEP = 4200;
+    const advance = () => {
+      if (held || stopped || document.hidden) return;
+      const card = $('.rcard', rtrack); if (!card) return;
+      const w = card.offsetWidth + (parseFloat(getComputedStyle(rtrack).columnGap) || 14);
+      const max = rtrack.scrollWidth - rtrack.clientWidth;
+      rtrack.scrollTo({ left: rtrack.scrollLeft >= max - 4 ? 0 : Math.min(max, rtrack.scrollLeft + w), behavior: 'smooth' });
+    };
+    const run = on => { clearInterval(timer); timer = on && !stopped ? setInterval(advance, STEP) : null; };
+    const stop = () => { stopped = true; run(false); rplay.setAttribute('aria-pressed', 'true'); rplay.setAttribute('aria-label', 'Play reviews'); };
+    rplay.hidden = false;
+    rplay.addEventListener('click', () => {
+      if (stopped) { stopped = false; rplay.setAttribute('aria-pressed', 'false'); rplay.setAttribute('aria-label', 'Pause reviews'); run(true); advance(); }
+      else stop();
+    });
+    $$('.rnav button:not(.rplay)').forEach(b => b.addEventListener('click', stop));
+    ['wheel', 'pointerdown', 'keydown'].forEach(ev => rtrack.addEventListener(ev, stop, { passive: true }));
+    rtrack.addEventListener('pointerenter', () => held = true);
+    rtrack.addEventListener('pointerleave', () => held = false);
+    rtrack.addEventListener('focusin', () => held = true);
+    rtrack.addEventListener('focusout', () => held = false);
+    new IntersectionObserver(([e]) => run(e.isIntersecting)).observe(rtrack);
+    reduced.addEventListener('change', e => { if (e.matches) stop(); });
   }
 
   /* booking: opens WhatsApp with the details filled in */
