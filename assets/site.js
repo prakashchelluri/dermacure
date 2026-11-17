@@ -4,6 +4,24 @@
   const io = (fn, opts) => new IntersectionObserver(es => es.forEach(fn), opts);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
+  /* every page opens at its top, unless the link points to a section (#...) */
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  const toTop = () => { if (!location.hash) { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, 0); document.documentElement.style.scrollBehavior = ''; } };
+  toTop();
+  addEventListener('pageshow', toTop);
+  /* a header or menu link to the page you are already on takes you back to its top */
+  document.addEventListener('click', e => {
+    const a = e.target.closest('.nav a[href], .menu a[href]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || a.target) return;
+    const url = new URL(a.href, location.href);
+    const here = p => p.replace(/index\.html$/, '');
+    if (url.origin === location.origin && here(url.pathname) === here(location.pathname) && !url.hash) {
+      e.preventDefault();
+      scrollTo({ top: 0, behavior: reduced.matches ? 'auto' : 'smooth' });
+      if (location.hash) history.replaceState(null, '', url.pathname);
+    }
+  });
+
   /* nav: white over the dark page top, frosted after it */
   const top = $('.hero, .phero');
   if (top) io(e => document.body.classList.toggle('hero-on', e.isIntersecting), { rootMargin: '-70px 0px -85% 0px' }).observe(top);
