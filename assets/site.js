@@ -39,7 +39,7 @@
   /* home hero film: plays once by itself, then rests on its last frame */
   const film = $('.hero video');
   if (film && !reduced.matches && !(navigator.connection && navigator.connection.saveData)) {
-    film.src = innerWidth <= 720 ? film.dataset.srcSm : film.dataset.src;
+    film.src = matchMedia("(max-aspect-ratio: 3/4)").matches ? film.dataset.srcSm : film.dataset.src;   // hero-sm.mp4 is a tall cut for upright phones
     film.addEventListener('playing', () => film.classList.add('on'), { once: true });
     film.play().catch(() => {});
     film.addEventListener('timeupdate', () => { if (film.currentTime >= 4.9) film.pause(); });   // rests within five seconds

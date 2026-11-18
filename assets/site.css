@@ -114,8 +114,8 @@ body:not(.hero-on) .nav{background:rgba(232,236,236,.88);backdrop-filter:blur(14
 /* home hero: one screen, the film plays by itself */
 .hero{position:relative;color:#f6f3ec;background:var(--deeper);overflow:hidden}
 .hero.home{min-height:max(100svh,640px);display:grid;align-content:center;padding:120px var(--gut) 150px}
-.hero .media,.hero .media>*{position:absolute;inset:0;width:100%;height:100%}
-.hero .media>*{object-fit:cover;object-position:70% 40%}
+.hero .media,.hero .media :is(img,video){position:absolute;inset:0;width:100%;height:100%}
+.hero .media :is(img,video){object-fit:cover;object-position:70% 40%}
 .hero .media video{opacity:0;transition:opacity 1.2s var(--ease)}
 .hero .media video.on{opacity:1}
 .hero .media img{animation:slowzoom 14s var(--ease) both}
@@ -158,7 +158,7 @@ body:not(.hero-on) .nav{background:rgba(232,236,236,.88);backdrop-filter:blur(14
 .hero-bar a{text-decoration:none}
 @media (max-width:820px){
   .hero.home{align-content:end;padding:clamp(80px,13svh,110px) var(--gut) 24px}
-  .hero .media>*{object-position:66% 30%}
+  .hero .media :is(img,video){object-position:66% 30%}
   .hero .scrim{background:linear-gradient(180deg,rgba(14,22,28,.5),rgba(14,22,28,.4) 22%,rgba(18,26,32,.9) 56%,rgba(18,26,32,.97))}
   .hero-bar{display:none}
   .slide .h{font-size:clamp(2.1rem,min(10vw,7svh),3.4rem)}
